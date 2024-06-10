@@ -90,12 +90,12 @@ After successful running the code you can see the two Excel files with results. 
 By following these steps, you should be able to successfully set up and run NEOS-LRP on your machine.
 
 
-10. ** Train data `sampling` folder:**
+10. **Train data `sampling` folder:**
 
 - Sampling Statergy 1 (`ss1.py`): The script selects a random LRP instance file from a specified folder. After extracting the data for customers and depots, a depot is randomly chosen. The script calculates the total demand of all customers and identifies the maximum capacity available among all depots. This helps determine the number of depots required to handle the total customer demand by dividing the total demand by the maximum depot capacity and rounding up. The number of customers to sample is decided using a normal distribution. The mean (`mu`) is calculated as the total number of customers divided by the number of necessary depots, and the standard deviation (`sigma`) is set to 20% of `mu`. The script samples a number of customers based on this distribution, ensuring the sample size is between one and the total number of customers. Finally, it identifies the closest customers to the chosen depot.
 
 - Sampling Statergy 2 (`ss2.py`): The script selects a random LRP instance file from a specified folder. After extracting data for customers and depots, it identifies a depot at random. The script computes the total customer demand and finds the minimum depot capacity across all depots. This information is used to determine the necessary number of depots to accommodate the total customer demand by dividing this demand by the minimum depot capacity and rounding up. The number of customers to sample is calculated using a normal distribution where the mean (`mu`) is the total number of customers divided by the calculated number of depots, and the standard deviation (`sigma`) is set to 20% of `mu`. The script samples customers based on this distribution but adjusts the final selection based on proximity and depot capacity constraints. It calculates the distance of each customer to the chosen depot, sorts them by proximity, and selects customers until reaching the depot's capacity limit or the predetermined sample size, whichever is lower. This method ensures that the selected subset of customers is realistically serviceable given the chosen depot's constraints.
 
 
-11. ** Training `training/codes` folder:**
+11. **Training `training/codes` folder:**
 The folder contains several files: `datapreprocessing.py`, `model.py`, `objective.py`, `problem.py`, and `train_test_val.py`. To get started, you need to change the file path in `train_test_val.py`, and then you can simply make the necessary changes to the submit script and submit on hpc. If you want to adjust the number of evaluations for hyperparameter optimization, you can do so in `problem.py`. The `model.py` file has the DeepSetsModel architecture.
