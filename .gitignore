@@ -5,9 +5,9 @@ __pycache__/
 neos/dil_instances/
 # C extensions
 *.so
-/Users/waquarkaleem/NEOS-LRP-Codes-2/training/sampledtraindata/
+training/sampledtraindata/
 .DS_Store
-
+pre_trained_model_old
 # Distribution / packaging
 .Python
 build/
