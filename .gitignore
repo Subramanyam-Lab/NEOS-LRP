@@ -6,6 +6,7 @@ neos/dil_instances/
 # C extensions
 *.so
 /Users/waquarkaleem/NEOS-LRP-Codes-2/training/sampledtraindata/
+.DS_Store
 
 # Distribution / packaging
 .Python
