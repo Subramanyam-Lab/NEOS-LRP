@@ -34,8 +34,8 @@ class createLRP ():
         
     def dataprocess(self,data_input_file):
         #input data file location
-        phi_loc='/Users/waquarkaleem/NEOS-LRP-Codes-2/pre_trained_model/DFL/iter_1_systematic_bs1_50frompool/model_phi.onnx'
-        rho_loc='/Users/waquarkaleem/NEOS-LRP-Codes-2/pre_trained_model/DFL/iter_1_systematic_bs1_50frompool/model_rho.onnx'
+        phi_loc='/Users/waquarkaleem/NEOS-LRP-Codes-2/pre_trained_model/algo4/model_phi_dnn_100000_algo_4_ortools_samearch.onnx'
+        rho_loc='/Users/waquarkaleem/NEOS-LRP-Codes-2/pre_trained_model/algo4/model_rho_dnn_100000_algo_4_ortools_samearch.onnx'
         logging.info(f"The phi file name:{phi_loc}\n")
         logging.info(f"The rho file name:{rho_loc}\n")
         # #preparing for log file
@@ -150,9 +150,6 @@ class createLRP ():
                         if x_start[j][i]==1:
                             z_start[j][l]+= (x_start[j][i])* (ws_phi_outputs[j][i][l])
                 
-
-                
-
         # initial routes cost and number
         route_cost_start=[0]*self.depotno
         # num_route_start=[0]*self.depotno
@@ -197,7 +194,6 @@ class createLRP ():
         initial_objective_value,xst,yst,routecost_st,z_st,ws_time=self.warmstart(initial_flp_assignment,self.init_route_cost,self.customer_cord,self.customer_demand,self.rc_cal_index,phi_loc,rho_loc)
         print("Initial Feasible solution:",initial_objective_value)
         
-
         #passing data through phi network
         phi_final_outputs={}
         for j in range(self.depotno):
@@ -305,7 +301,7 @@ class createLRP ():
         sys.stdout = open(log_filename, "a")
 
         #Soluton terminate at 5%gap
-        m.setParam('MIPGAP', 0)
+        m.setParam('MIPGAP', 0.01)
 
         #Optimize model
         St_time1=datetime.now()
@@ -352,15 +348,15 @@ class createLRP ():
 
         etpd= execution_time1/cou
 
-        for v in m.getVars():
-            logging.info(v.varName)
-            logging.info(str(v.x))
-            logging.info("\n")
+        # for v in m.getVars():
+        #     logging.info(v.varName)
+        #     logging.info(str(v.x))
+        #     logging.info("\n")
         
 
 
         #print(m.display())
-        logging.info(m.display())
+        # logging.info(m.display())
 
         #self.writeexcel(file,f_obj,r_obj,lrp_obj,etpd)
 

@@ -6,6 +6,10 @@ from dataparse import create_data
 from datetime import datetime
 import logging
 import sys
+from openpyxl import Workbook, load_workbook
+
+## Directory to store decision informed instances 
+DIL_instances = "/Users/waquarkaleem/NEOS-LRP-Codes-2/neos/dil_instances/DIL_algo_3_ortools"
 
 log_dir = "log_files/mip_nn"
 os.makedirs(log_dir, exist_ok=True)
@@ -13,17 +17,68 @@ os.makedirs(log_dir, exist_ok=True)
 # Directory containing the prodhon dataset
 directory_path = "/Users/waquarkaleem/NEOS-LRP-Codes-2/prodhon_dataset"
 
-# Directory to store decision informed instances 
-DIL_instances = "/Users/waquarkaleem/NEOS-LRP-Codes-2/neos/dil_instances"
+existing_excel_file="/Users/waquarkaleem/NEOS-LRP-Codes-2/results/DFL_LRP_updated.xlsx" 
+sheet_name = "algo_4_ortools"
 
-# Write the results in the excel
-existing_excel_file="/Users/waquarkaleem/NEOS-LRP-Codes-2/results/DFL_LRP.xlsx" 
-workbook = openpyxl.load_workbook(existing_excel_file)
-sheet_name = "iter_1_systematic_bs1_50frompool"
+try:
+    workbook = load_workbook(existing_excel_file)
+except FileNotFoundError:
+    print(f"Excel file not found. Creating new file: {existing_excel_file}")
+    workbook = Workbook()
+    workbook.save(existing_excel_file)
 
 if sheet_name not in workbook.sheetnames:
     workbook.create_sheet(sheet_name)
 worksheet = workbook[sheet_name]
+
+headings = [
+    "Instance", "FLP", "VRP", "LRP(MIP+NN)", 
+    "Exec time per depot(MIP+NN)", "initial solution generation time",
+    "NN model execution time", "VRPSolverEasy computed VRP cost",
+    "actual LRP cost(using VRPSolverEasy)",
+    "avg solver_cvrp script execution time per depot",
+    "total solver_cvrp script execution time",
+    "VRPSolverEasy model solve time" , "BKS", "Gap wrt BKS"
+]
+
+
+if worksheet.max_row == 1 and worksheet.max_column == 1 and worksheet.cell(1, 1).value is None:
+    # Add headings to the first row
+    for col, heading in enumerate(headings, start=1):
+        worksheet.cell(row=1, column=col, value=heading)
+
+bks_dict = {
+    "coord100-5-1.dat": 274814,
+    "coord100-5-1b.dat": 213568,
+    "coord100-10-3b.dat": 203114,
+    "coord100-5-2.dat": 193671,
+    "coord100-5-3.dat": 200079,
+    "coord50-5-2.dat": 88293,
+    "coord20-5-1b.dat": 39104,
+    "coord200-10-3.dat": 469433,
+    "coord200-10-2.dat": 448077,
+    "coord100-10-2b.dat": 203988,
+    "coord50-5-3.dat": 86203,
+    "coord50-5-1.dat": 90111,
+    "coord200-10-1.dat": 474850,
+    "coord20-5-2.dat": 48908,
+    "coord50-5-1b.dat": 63242,
+    "coord200-10-2b.dat": 373696,
+    "coord20-5-1.dat": 54793,
+    "coord200-10-3b.dat": 362320,
+    "coord50-5-3b.dat": 61830,
+    "coord50-5-2BIS.dat": 84055,
+    "coord50-5-2bBIS.dat": 51822,
+    "coord200-10-1b.dat": 375177,
+    "coord50-5-2b.dat": 67308,
+    "coord100-10-2.dat": 243590,
+    "coord100-10-3.dat": 250882,
+    "coord20-5-2b.dat": 37542,
+    "coord100-10-1.dat": 287661,
+    "coord100-5-3b.dat": 152441,
+    "coord100-10-1b.dat": 230989,
+    "coord100-5-2b.dat": 157095
+}
 
 def write_to_txt_cvrplib_format(depot_id, depot_customers, depot_coords, customer_demands, filename, vehicle_capacity):
     with open(filename, 'w') as file:
@@ -113,7 +168,7 @@ for filename in os.listdir(directory_path):
             vehicle_capacity = ans[4][0]  
             depot_customers = [(x[0], x[1]) for x in customer_coords]
             num_customers = len(customers)
-            # filename = f"cvrp_instance_depot_{os.path.basename(file_path)}_{depot_id}.txt"
+            filename = f"cvrp_instance_depot_{os.path.basename(file_path)}_{depot_id}.txt"
             filename = f"cvrp_instance_depot_{os.path.basename(file_path).split('.')[0]}_depot_{depot_id}_customers_{num_customers}.txt"
             output_file_path = os.path.join(DIL_instances, filename)
 
@@ -141,13 +196,22 @@ for filename in os.listdir(directory_path):
         # Close the log file
         logging.shutdown()
 
+        instance_name = os.path.basename(file_path)
+        bks = bks_dict.get(instance_name)
+        actual_lrp_cost = vrp_easy_results[0]
+
+        if bks is not None:
+            gap = (abs(bks - actual_lrp_cost) / bks) * 100
+            gap = round(gap, 2)  # Round to 2 decimal places
+        else:
+            bks = "N/A"
+            gap = "N/A"
+
         # Create a new row
-        new_row = [os.path.basename(file_path),lrp_result[2],lrp_result[3],lrp_result[2]+lrp_result[3],lrp_exec,warmstart_time,nn_model_time,vrp_easy_results[1], vrp_easy_results[0],ve_exec,tot_ve_exec,vrp_easy_results[7]]  # Replace with your data
+        new_row = [os.path.basename(file_path),lrp_result[2],lrp_result[3],lrp_result[2]+lrp_result[3],lrp_exec,warmstart_time,nn_model_time,vrp_easy_results[1], vrp_easy_results[0],ve_exec,tot_ve_exec,vrp_easy_results[7], bks, gap]  # Replace with your data
         
         # Append the new row to the worksheet
         worksheet.append(new_row)
 
         # Save the modified Excel file
         workbook.save(existing_excel_file)
-
-
