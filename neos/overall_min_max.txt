@@ -1,0 +1,9 @@
+Overall Min and Max Values Across All Instances:
+Overall Min X: 1
+Overall Max X: 38
+Overall Min Y: 5
+Overall Max Y: 50
+Overall Min Demand: 11
+Overall Max Demand: 20
+Minimum Cost: 16.0
+Maximum Cost: 287.0

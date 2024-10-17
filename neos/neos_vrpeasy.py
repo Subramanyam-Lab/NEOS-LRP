@@ -9,7 +9,7 @@ import sys
 from openpyxl import Workbook, load_workbook
 
 ## Directory to store decision informed instances 
-DIL_instances = "/Users/waquarkaleem/NEOS-LRP-Codes-2/neos/dil_instances/DIL_algo_3_ortools"
+DIL_instances = "/Users/waquarkaleem/NEOS-LRP-Codes-2/neos/dil_instances/DIL_algo_btd"
 
 log_dir = "log_files/mip_nn"
 os.makedirs(log_dir, exist_ok=True)
@@ -18,7 +18,7 @@ os.makedirs(log_dir, exist_ok=True)
 directory_path = "/Users/waquarkaleem/NEOS-LRP-Codes-2/prodhon_dataset"
 
 existing_excel_file="/Users/waquarkaleem/NEOS-LRP-Codes-2/results/DFL_LRP_updated.xlsx" 
-sheet_name = "algo_4_ortools"
+sheet_name = "algo_btd"
 
 try:
     workbook = load_workbook(existing_excel_file)
@@ -106,7 +106,7 @@ def write_to_txt_cvrplib_format(depot_id, depot_customers, depot_coords, custome
         file.write("EOF\n")
 
 for filename in os.listdir(directory_path):
-    if filename.endswith(".dat"):  # Adjust the file extension as needed
+    if filename == 'coord20-5-1.dat':
         file_path = os.path.join(directory_path, filename)
         print("Working on :",file_path)
         
