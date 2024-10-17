@@ -119,12 +119,9 @@ class createLRP ():
         print(fac_dict_initial)  
         print(rc_norm_factor) 
 
-
         phi_outputs={}
         for j in y_open:
             phi_outputs[j]=extract_onnx(fac_dict_initial[j].values,phi_net)
-        
-        
         
         print(phi_outputs[y_open[0]].size())
         sz=phi_outputs[y_open[0]].size()
@@ -352,8 +349,6 @@ class createLRP ():
         #     logging.info(v.varName)
         #     logging.info(str(v.x))
         #     logging.info("\n")
-        
-
 
         #print(m.display())
         # logging.info(m.display())
