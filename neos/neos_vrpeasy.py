@@ -106,7 +106,8 @@ def write_to_txt_cvrplib_format(depot_id, depot_customers, depot_coords, custome
         file.write("EOF\n")
 
 for filename in os.listdir(directory_path):
-    if filename.endswith(".dat"):  # Adjust the file extension as needed
+    # if filename.endswith(".dat"):  # Adjust the file extension as needed
+    if filename == 'coord20-5-1.dat':
         file_path = os.path.join(directory_path, filename)
         print("Working on :",file_path)
         
