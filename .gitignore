@@ -8,6 +8,7 @@ neos/dil_instances/
 training/sampledtraindata/
 .DS_Store
 pre_trained_model_old
+/Users/waquarkaleem/NEOS-LRP-Codes-2/neos/BFS/f_rscc_hetero_ortools/100
 # Distribution / packaging
 .Python
 build/
