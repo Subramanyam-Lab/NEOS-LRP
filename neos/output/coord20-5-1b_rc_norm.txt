@@ -1,0 +1,6 @@
+Normalization factor for route cost (rc_norm):
+Depot 0: 48.0
+Depot 1: 49.0
+Depot 2: 48.0
+Depot 3: 48.0
+Depot 4: 48.0

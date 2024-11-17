@@ -64,8 +64,6 @@ def create_data(file_loc):
 
     return [no_cust,no_depot,depot_cord,cust_cord,vehicle_cap,depot_cap,cust_dem,open_dep_cost,route_cost,rc_cal_index]
 
-
-
 def dist_calc(cord_set1,cord_set2,rc_cal_index):
     
     distances = {}
@@ -98,44 +96,81 @@ def new_dist_calc(cord_set,rc_cal_index):
     
     return distances,sum1
 
-def normalize_coord(cord_set1,cord_set2,rc_cal_index):
-    coor=pd.DataFrame()
-    mod_coord = {}
-    mod_coord1={}
-    sum_dist={}
-    dist_fac_cust={}
-    # depot coordiantes
-    fi_list=[]
-    for j in range(len(cord_set1)):
-        mod_coord[j]={}
-        max_x=0
-        min_x=0
-        max_y=0
-        min_y=0
-        # customer coordinates
-        for i in range(len(cord_set2)):
-                mod_coord[j][i] = (float(cord_set2[i][0]) - float(cord_set1[j][0])),(float(cord_set2[i][1]) - float(cord_set1[j][1]))
-                x = (float(cord_set2[i][0]) - float(cord_set1[j][0]))
-                max_x=max(max_x,x)
-                min_x=min(min_x,x)
-                y = (float(cord_set2[i][1]) - float(cord_set1[j][1]))
-                max_y=max(max_y,y)
-                min_y=min(min_y,y)
-        fi=max((max_x-min_x),(max_y-min_y))
-        fi_list.append(fi)
-        print(max_x,min_x,max_y,min_y)
+# def normalize_coord(cord_set1,cord_set2,rc_cal_index):
+#     coor=pd.DataFrame()
+#     mod_coord = {}
+#     mod_coord1={}
+#     sum_dist={}
+#     dist_fac_cust={}
+#     # depot coordiantes
+#     fi_list=[]
+#     for j in range(len(cord_set1)):
+#         mod_coord[j]={}
+#         max_x=0
+#         min_x=0
+#         max_y=0
+#         min_y=0
+#         # customer coordinates
+#         for i in range(len(cord_set2)):
+#                 mod_coord[j][i] = (float(cord_set2[i][0]) - float(cord_set1[j][0])),(float(cord_set2[i][1]) - float(cord_set1[j][1]))
+#                 x = (float(cord_set2[i][0]) - float(cord_set1[j][0]))
+#                 max_x=max(max_x,x)
+#                 min_x=min(min_x,x)
+#                 y = (float(cord_set2[i][1]) - float(cord_set1[j][1]))
+#                 max_y=max(max_y,y)
+#                 min_y=min(min_y,y)
+#         fi=max((max_x-min_x),(max_y-min_y))
+#         fi_list.append(fi)
+#         print(max_x,min_x,max_y,min_y)
 
-    #_ = [mod_coord.__setitem__(j, {i: [mod_coord[j][i]/fi_list[j]] for i in mod_coord[j]}) for j in mod_coord]
-    for j in mod_coord:
-         for i in mod_coord[j]:
-              mod_coord[j][i]=[mod_coord[j][i][0] / fi_list[j] ,mod_coord[j][i][1] / fi_list[j]]
+#     #_ = [mod_coord.__setitem__(j, {i: [mod_coord[j][i]/fi_list[j]] for i in mod_coord[j]}) for j in mod_coord]
+#     for j in mod_coord:
+#          for i in mod_coord[j]:
+#               mod_coord[j][i]=[mod_coord[j][i][0] / fi_list[j] ,mod_coord[j][i][1] / fi_list[j]]
               
-    dist_fac_cust,big_m=new_dist_calc(mod_coord,rc_cal_index)
-    coor['normal']=mod_coord.values()
-    #coor['normal']=mod_coord1.values()
-    print("Big M value:",big_m)
-    print("Normalization factors for all depots",fi_list)
-    return coor,dist_fac_cust,big_m,fi_list
+#     dist_fac_cust,big_m=new_dist_calc(mod_coord,rc_cal_index)
+#     coor['normal']=mod_coord.values()
+#     #coor['normal']=mod_coord1.values()
+#     print("Big M value:",big_m)
+#     print("Normalization factors for all depots",fi_list)
+#     return coor,dist_fac_cust,big_m,fi_list
+
+
+def normalize_coord(cord_set1, cord_set2, rc_cal_index):
+    coor = pd.DataFrame()
+    mod_coord = {}
+    fi_list = []
+    for j in range(len(cord_set1)):
+        mod_coord[j] = {}
+        x_list = []
+        y_list = []
+        # Shifted coordinates and collection of x and y values
+        for i in range(len(cord_set2)):
+            x = float(cord_set2[i][0]) - float(cord_set1[j][0])
+            y = float(cord_set2[i][1]) - float(cord_set1[j][1])
+            mod_coord[j][i] = (x, y)
+            x_list.append(x)
+            y_list.append(y)
+        # Include the depot's shifted coordinates (0, 0)
+        x_list.append(0.0)
+        y_list.append(0.0)
+        # Calculate max and min values
+        max_x = max(x_list)
+        min_x = min(x_list)
+        max_y = max(y_list)
+        min_y = min(y_list)
+        fi = max((max_x - min_x), (max_y - min_y))
+        fi_list.append(fi)
+        print(f"Depot {j}: max_x={max_x}, min_x={min_x}, max_y={max_y}, min_y={min_y}, fi={fi}")
+    # Normalize coordinates
+    for j in mod_coord:
+        for i in mod_coord[j]:
+            mod_coord[j][i] = [mod_coord[j][i][0] / fi_list[j], mod_coord[j][i][1] / fi_list[j]]
+    dist_fac_cust, big_m = new_dist_calc(mod_coord, rc_cal_index)
+    coor['normal'] = mod_coord.values()
+    print("Big M value:", big_m)
+    print("Normalization factors for all depots", fi_list)
+    return coor, dist_fac_cust, big_m, fi_list
 
 def norm_data(cord_set1,cord_set2,veh_cap,cust_dem,rc_cal_index):
     facility_dict={}

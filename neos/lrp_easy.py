@@ -34,8 +34,8 @@ class createLRP ():
         
     def dataprocess(self,data_input_file):
         #input data file location
-        phi_loc='/Users/waquarkaleem/NEOS-LRP-Codes-2/pre_trained_model/algo4/model_phi_dnn_100000_algo_4_ortools_samearch.onnx'
-        rho_loc='/Users/waquarkaleem/NEOS-LRP-Codes-2/pre_trained_model/algo4/model_rho_dnn_100000_algo_4_ortools_samearch.onnx'
+        phi_loc='/Users/waquarkaleem/NEOS-LRP-Codes-2/pre_trained_model/btd_updated/model_phi_dnn_100.onnx'
+        rho_loc='/Users/waquarkaleem/NEOS-LRP-Codes-2/pre_trained_model/btd_updated/model_rho_dnn_100.onnx'
         logging.info(f"The phi file name:{phi_loc}\n")
         logging.info(f"The rho file name:{rho_loc}\n")
         # #preparing for log file
@@ -65,6 +65,19 @@ class createLRP ():
         facility_dict,big_m,rc_norm=norm_data(self.depot_cord,self.customer_cord,self.vehicle_capacity,self.customer_demand,self.rc_cal_index)
 
 
+        file_base_name = os.path.basename(data_input_file)
+        file_name_without_ext = os.path.splitext(file_base_name)[0]
+        output_dir = 'output'  # Specify your output directory
+        os.makedirs(output_dir, exist_ok=True)
+        output_file_name = os.path.join(output_dir, f"{file_name_without_ext}_rc_norm.txt")
+
+        with open(output_file_name, 'w') as f:
+            f.write("Normalization factor for route cost (rc_norm):\n")
+            for idx, value in enumerate(rc_norm):
+                f.write(f"Depot {idx}: {value}\n")
+
+        logging.info(f"Normalization factor for route cost {rc_norm}")
+
         #initial facility customer assignments
         initial_flp_assignment=flp(self.customer_no,self.depotno,self.depot_cord,self.customer_cord,self.depot_capacity,self.customer_demand,self.facilitycost,self.init_route_cost,self.rc_cal_index)
         logging.info(f"Initial FLP Assignments{initial_flp_assignment}")
@@ -80,7 +93,6 @@ class createLRP ():
         
         x_start=[[0]*self.customer_no for j in range(self.depotno)]
 
-            
         for j in y_open:
             i=0
             for i in range(self.customer_no):
@@ -161,6 +173,7 @@ class createLRP ():
         # print("Initial Number of Routes",num_route_start)
         # logging.info(f"Initial Number of routes {num_route_start}")
         logging.info(f"Normalization factor for route cost {rc_norm_factor}")
+
         initial_flp_cost= sum(self.facilitycost[j]*y_start[j] for j in range(self.depotno))
         logging.info(f"Initial Facility Objective value is {initial_flp_cost}")
         if self.rc_cal_index==0:
@@ -197,12 +210,11 @@ class createLRP ():
             phi_final_outputs[j]=extract_onnx(facility_dict[j].values,phi_loc)
 
         print(phi_final_outputs[0].size())
+        logging.info(phi_final_outputs)
         sz=phi_final_outputs[0].size()
         latent_space=sz[1]
 
-
         #LRP Model
-        
 
         m = gp.Model('facility_location')
 
@@ -219,34 +231,36 @@ class createLRP ():
             for i in range(self.customer_no):
                 x[j,i].Start = xst[j][i]
 
-        z = m.addVars(self.depotno, latent_space, vtype=GRB.CONTINUOUS, lb=0 ,name="z-plus")
+        # z = m.addVars(self.depotno, latent_space, vtype=GRB.CONTINUOUS,name="z")
+        z = m.addVars(self.depotno, latent_space, vtype=GRB.CONTINUOUS, lb=-GRB.INFINITY, name="z")
+
         for j in range(self.depotno):
             for l in range(latent_space):
                 z[j,l].Start=z_st[j][l]
 
-        route_cost=m.addVars(self.depotno,vtype=GRB.CONTINUOUS,lb=0,name='route cost ')
+        route_cost=m.addVars(self.depotno,vtype=GRB.CONTINUOUS,lb=0,name='route_cost')
         for j in range(self.depotno):
             route_cost[j].Start = routecost_st[j]
 
-        num_routes=m.addVars(self.depotno,vtype=GRB.CONTINUOUS, lb=0,name='Number of routes')
+        num_routes=m.addVars(self.depotno,vtype=GRB.CONTINUOUS, lb=0,name='Number_of_routes')
 
         # for j in range(self.depotno):
         #     num_routes[j].Start = numroute_st[j]
             
-        u=m.addVars(self.depotno,vtype=GRB.CONTINUOUS,lb=0, name= "dummy route cost")
+        u=m.addVars(self.depotno,vtype=GRB.CONTINUOUS,lb=0, name= "dummy_route_cost")
 
-        v=m.addVars(self.depotno,vtype=GRB.CONTINUOUS,lb=0, name= "dummy number of routes")
+        v=m.addVars(self.depotno,vtype=GRB.CONTINUOUS,lb=0, name= "dummy_number_of_routes")
 
         for j in range(self.depotno):
             for l in range(latent_space):
                 m.addConstr(z[j, l] == gp.quicksum(x[j, i] * phi_final_outputs[j][i,l] for i in range(self.customer_no)),name=f'Z-plus[{j}][{l}]')
                 
-
         #Constraint
         m.addConstrs((gp.quicksum(x[(j,i)] for j in range(self.depotno)) == 1 for i in range(self.customer_no)), name='Demand')
 
         m.addConstrs((gp.quicksum(x[j, i] * self.customer_demand[i] for i in range(self.customer_no)) <= self.depot_capacity[j] * y[j] for j in range(self.depotno)), name="facility_capacity_constraint")
 
+        m.addConstrs((x[j, i] <= y[j] for j in range(self.depotno) for i in range(self.customer_no)), name='Assignment_to_open_facility')
 
         St_time=datetime.now()
         print("Start time for MIP part:",St_time)
@@ -270,7 +284,6 @@ class createLRP ():
             # route_per_depot[j]=[route_cost[j],num_routes[j]]
             route_per_depot[j] = [route_cost[j]]   
 
-
         for j in range(self.depotno):
             t_const=gt.add_sequential_constr(m, sequential_model,z_values_per_depot[j],route_per_depot[j])
             t_const.print_stats()
@@ -278,6 +291,7 @@ class createLRP ():
         # Indicator Constraint to stop cost calculation for closed depot
         for j in range(self.depotno):
             m.addConstr((y[j]==0)>>(u[j]==0))
+            # m.addConstr((y[j]==1)>>(u[j]==route_per_depot[j][0]))
             m.addConstr((y[j]==1)>>(u[j]==route_per_depot[j][0]))
             # m.addConstr((y[j]==0)>>(v[j]==0))
             # m.addConstr((y[j]==1)>>(v[j]==route_per_depot[j][1]))
@@ -299,10 +313,19 @@ class createLRP ():
 
         #Soluton terminate at 5%gap
         m.setParam('MIPGAP', 0.01)
+        m.setParam('TimeLimit', 3600)
 
         #Optimize model
         St_time1=datetime.now()
+        m.write('model_feasible.lp')
         m.optimize()
+
+        if m.Status == GRB.INFEASIBLE:
+            print("Model is infeasible; computing IIS...")
+            m.computeIIS()
+            m.write("model.ilp")
+            print("IIS written to model.ilp")
+
         Ed_time=datetime.now()
         print("Objective value is ", end='')
         print(m.objVal,'\n')
@@ -318,7 +341,6 @@ class createLRP ():
         r_obj=route_obj.getValue()
         logging.info(f'Route Objective value: {r_obj}')
 
-        
         execution_time = (Ed_time - St_time).total_seconds()
         print("Lrp NN Script Execution time:", execution_time)
         logging.info(f"Lrp NN Script Execution time: {execution_time}")
@@ -362,8 +384,6 @@ class createLRP ():
         logging.shutdown()
 
         return y_val, x_val, f_obj,r_obj, ws_time,execution_time1
-
-       
 
     def writeexcel(self,data_input_file,f_obj,r_obj,lrp_obj,etpd):
 

@@ -59,12 +59,19 @@ class dataCvrp ():
         logging.info(f"Final VRP variable cost is {self.vrp_cost}")
         print("Number of routes:",self.tot_routes)
         logging.info(f"Number of routes is {self.tot_routes}")
-        print("Final VRP fixed cost:",1000*self.tot_routes)
-        logging.info(f"Final VRP fixed cost is {1000*self.tot_routes}")
-        total_lrp_cost=self.flp_cost+self.vrp_cost+1000*self.tot_routes
-        total_vrp_cost=self.vrp_cost+1000*self.tot_routes
+        
+        # print("Final VRP fixed cost:",1000*self.tot_routes)
+        # logging.info(f"Final VRP fixed cost is {1000*self.tot_routes}")
+        # total_lrp_cost=self.flp_cost+self.vrp_cost+1000*self.tot_routes
+        # total_vrp_cost=self.vrp_cost+1000*self.tot_routes
+
+        total_lrp_cost = self.flp_cost + self.vrp_cost
+        total_vrp_cost = self.vrp_cost
+
         print("Total LRP cost",total_lrp_cost)
+
         logging.info(f"Final VRP cost is {total_lrp_cost}")
+        
         return total_lrp_cost,total_vrp_cost,self.variable_cost,self.num_routes,self.message,self.solve_time,self.actual_routes,self.model_exec_time
 
 
@@ -92,7 +99,7 @@ class dataCvrp ():
         data['rc_cal_index']=rc_cal_index
         return data
 
-    def solve_demo(self,data,cust,
+    def solve_demo(self,data,cust, F=1000,
                 time_resolution=7200,
                 solver_name_input="CLP",
                 solver_path=""):
@@ -110,6 +117,7 @@ class dataCvrp ():
                             end_point_id=0,
                             max_number=data['nb_cust'],
                             capacity=data['vehicle_capacities'][0],
+                            fixed_cost = 1000,
                             var_cost_dist=1 # we dont have any variable cost for distance. It is incorporated from the euclidean distance only?
                             )
         # add depot
@@ -133,6 +141,7 @@ class dataCvrp ():
                                             float(data['locations'][0][1]),
                                             data['rc_cal_index']
                                             )
+            # modified_dist = dist + F / 2
             print("Dist b/w  cust {} and depot is  {}".format(data['assigned_cust'][i-1],dist))
 
             model.add_link(start_point_id=0,
@@ -193,11 +202,10 @@ class dataCvrp ():
 
         return cost, m, message, routes, exec_time
 
-
     def solve_files_in_directory(self,data,cust):
         
         start_time = time.time()
-        cost, m, message, routes,ex_time  = self.solve_demo(data,cust)
+        cost, m, message, routes,ex_time  = self.solve_demo(data,cust,F=1000)
         solve_time = time.time() - start_time
         return cost,m,message,routes,ex_time
 
