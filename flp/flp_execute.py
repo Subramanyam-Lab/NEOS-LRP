@@ -17,14 +17,15 @@ os.makedirs(log_dir, exist_ok=True)
 directory_path = "/Users/waquarkaleem/NEOS-LRP-Codes/prodhon_dataset"
 
 # Iterate through files in the directory
-existing_excel_file="/Users/waquarkaleem/NEOS-LRP-Codes/results/flp_results.xlsx"
+existing_excel_file="/Users/waquarkaleem/NEOS-LRP-Codes-2/results/flp_results.xlsx"
 workbook = openpyxl.load_workbook(existing_excel_file)
 
 # Select the worksheet where you want to append the new row
 worksheet = workbook.active
 
 for filename in os.listdir(directory_path):
-    if filename.endswith(".dat"):  # Adjust the file extension as needed
+    # if filename.endswith(".dat"):  # Adjust the file extension as needed
+    if filename == 'coord20-5-1.dat':
         
         file_path = os.path.join(directory_path, filename)
       
